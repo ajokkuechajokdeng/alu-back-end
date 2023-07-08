@@ -1,53 +1,34 @@
 #!/usr/bin/python3
-""" gather infos from api """
+"""Script to use a REST API for a given employee ID, returns
+information about his/her TODO list progress"""
 import requests
 import sys
 
 
-def verif(request):
-    """ check for request status """
-    print(request)
-    print(request.status_code)
-    print(request.headers)
-    print(request.text)
-    print(request.json())
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(f"UsageError: python3 {__file__} employee_id(int)")
+        sys.exit(1)
 
-def outPutPrint(searchedUser, listTodoUser):
-    """ Print in terminal output thingy """
-    # Output Preparation
+    API_URL = "https://jsonplaceholder.typicode.com"
+    EMPLOYEE_ID = sys.argv[1]
 
-    if len(searchedUser) != 0:
-        EMPLOYEE_NAME = searchedUser[0]["name"]
-    else:
-        EMPLOYEE_NAME = "Not found"
-    NUMBER_OF_DONE_TASKS = str(listTodoUser).count('\'completed\': True')
-    TOTAL_NUMBER_OF_TASKS = len(listTodoUser)
+    response = requests.get(
+        f"{API_URL}/users/{EMPLOYEE_ID}/todos",
+        params={"_expand": "user"}
+    )
+    data = response.json()
 
-    # Output
-    print("Employee {} is done with tasks({}/{}):"
-          .format(EMPLOYEE_NAME, NUMBER_OF_DONE_TASKS, TOTAL_NUMBER_OF_TASKS))
-    for task in listTodoUser:
-        if task["completed"]:
-            print("\t {}".format(task["title"]))
-    
+    if not len(data):
+        print("RequestError:", 404)
+        sys.exit(1)
 
-if len(sys.argv) == 2:
-    # Search for person
-    userLink = "https://jsonplaceholder.typicode.com/users/"
-    id = sys.argv[1]
-    queryUser = {'id': id}
-    requestPerson = requests.get(userLink, params=queryUser)
+    employee_name = data[0]["user"]["name"]
+    total_tasks = len(data)
+    done_tasks = [task for task in data if task["completed"]]
+    total_done_tasks = len(done_tasks)
 
-    # Search for their respective todo list
-    todoLink = "https://jsonplaceholder.typicode.com/todos/"
-    queryTodo = {'userId': id}
-    requestTodoList = requests.get(todoLink, params=queryTodo)
-
-    searchedUser = requestPerson.json()
-    listTodoUser = requestTodoList.json()
-
-    outPutPrint(searchedUser, listTodoUser)
-
-    # tests
-    # verif(requestPerson)
-    # verif(requestTodoList)
+    print(f"Employee {employee_name} is done with tasks"
+          f"({total_done_tasks}/{total_tasks}):")
+    for task in done_tasks:
+        print(f"\t {task['title']}")
