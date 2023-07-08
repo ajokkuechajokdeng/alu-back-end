@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-""" export to CVS """
-import csv
+""" export to json """
+import json
 import requests
 import sys
 
@@ -14,19 +14,24 @@ def verif(request):
     print(request.json())
 
 
-def outPutCVS(searchedUser, listTodoUser):
+def outPutJson(searchedUser, listTodoUser):
     """ Print in terminal output thingy """
     # Output Preparation
+    dictJson = dict()
+    dictInside = dict()
+    listOfDict = []
+    username = searchedUser[0]["username"]
+    for i in range(len(listTodoUser)):
+        dictInside = dict()
+        dictInside["task"] = listTodoUser[i]["title"]
+        dictInside["completed"] = listTodoUser[i]["completed"]
+        dictInside["username"] = username
+        listOfDict.append(dictInside)
 
-    with open("{}.csv".format(searchedUser[0]["id"]), mode='w') as f:
-        tasks = csv.writer(f, delimiter=',', quotechar='"',
-                           quoting=csv.QUOTE_ALL)
+    dictJson[searchedUser[0]["id"]] = listOfDict
+    with open("{}.json".format(searchedUser[0]["id"]), mode='w') as f:
+        f.write(json.dumps(dictJson))
 
-        for task in listTodoUser:
-            tasks.writerow([searchedUser[0]["id"],
-                            searchedUser[0]["username"],
-                            task["completed"],
-                            task["title"]])
 
 if len(sys.argv) == 2:
     # Search for person
@@ -43,7 +48,7 @@ if len(sys.argv) == 2:
     searchedUser = requestPerson.json()
     listTodoUser = requestTodoList.json()
 
-    outPutCVS(searchedUser, listTodoUser)
+    outPutJson(searchedUser, listTodoUser)
 
     # tests
     # verif(requestPerson)
